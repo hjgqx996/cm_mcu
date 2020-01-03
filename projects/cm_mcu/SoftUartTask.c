@@ -40,7 +40,6 @@ tSoftUART g_sUART;
 
 extern uint32_t g_ui32SysClock;
 
-
 void SoftUartTask(void *parameters)
 {
   // Setup
