@@ -43,7 +43,7 @@
 #include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
 #include "driverlib/uart.h"
-#include "utils/softuart.h"
+#include "common/softuart.h"
 
 //*****************************************************************************
 //
