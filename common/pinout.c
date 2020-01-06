@@ -35,8 +35,8 @@
 //
 //*****************************************************************************
 
-// This file was automatically generated on 8/3/2019 at 9:39:54 PM
-// by TI PinMux version 4.0.1532 
+// This file was automatically generated on 1/6/2020 at 3:56:10 PM
+// by TI PinMux version 4.0.1538 
 //
 //*****************************************************************************
 
@@ -544,7 +544,7 @@ PinoutSet(void)
     // Configure the GPIO Pin Mux for PM6
 	// for GPIO_PM6
     //
-	MAP_GPIOPinTypeGPIOOutput(GPIO_PORTM_BASE, GPIO_PIN_6);
+	MAP_GPIOPinTypeGPIOInput(GPIO_PORTM_BASE, GPIO_PIN_6);
 
     //
     // Configure the GPIO Pin Mux for PM5
