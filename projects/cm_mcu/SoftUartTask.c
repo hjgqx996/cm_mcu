@@ -107,13 +107,13 @@ void SoftUartTask(void *parameters)
   //
   SoftUARTIntEnable(&g_sUART, SOFTUART_INT_TX);
 
-  uint8_t vals[] = {0xA5, 0x5a, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
+  uint8_t vals[] = {0x9c,0x2c,0x2b,0x3e};
 
   // Loop forever
   for (;;) {
 
     // send data buffer
-    for (int i = 0; i < 8; ++i ) {
+    for (int i = 0; i < 4; ++i ) {
       SoftUARTCharPut(&g_sUART, vals[i]);
     }
 
