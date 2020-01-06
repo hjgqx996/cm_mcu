@@ -48,11 +48,10 @@ void SoftUartTask(void *parameters)
   //
   SoftUARTInit(&g_sUART);
   //
-  // Configure the pins used for the software UART.  This example uses
-  // pins PD0 and PE1.
+  // Configure the pins used for the software UART.
   //
-  SoftUARTTxGPIOSet(&g_sUART, GPIO_PORTD_BASE, GPIO_PIN_0);
-  SoftUARTRxGPIOSet(&g_sUART, GPIO_PORTE_BASE, GPIO_PIN_1);
+  SoftUARTTxGPIOSet(&g_sUART, GPIO_PORTM_BASE, GPIO_PIN_6);
+  //SoftUARTRxGPIOSet(&g_sUART, GPIO_PORTE_BASE, GPIO_PIN_1);
   //
   // Configure the data buffers used as the transmit and receive buffers.
   //
@@ -68,6 +67,7 @@ void SoftUartTask(void *parameters)
   // Configure the software UART module: 8 data bits, no parity, and one
   // stop bit.
   //
+  // this also sets the pins.
   SoftUARTConfigSet(&g_sUART,
                     (SOFTUART_CONFIG_WLEN_8 | SOFTUART_CONFIG_PAR_NONE |
                      SOFTUART_CONFIG_STOP_ONE));

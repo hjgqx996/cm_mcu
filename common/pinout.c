@@ -544,7 +544,7 @@ PinoutSet(void)
     // Configure the GPIO Pin Mux for PM6
 	// for GPIO_PM6
     //
-	MAP_GPIOPinTypeGPIOInput(GPIO_PORTM_BASE, GPIO_PIN_6);
+	MAP_GPIOPinTypeGPIOOutput(GPIO_PORTM_BASE, GPIO_PIN_6);
 
     //
     // Configure the GPIO Pin Mux for PM5
