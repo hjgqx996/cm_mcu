@@ -34,9 +34,12 @@ unsigned char g_pucTxBuffer[16];
 //
 unsigned long g_ulBitTime;
 
+#define TARGET_BAUD_RATE 115200
+
 tSoftUART g_sUART;
 
 extern uint32_t g_ui32SysClock;
+
 
 void SoftUartTask(void *parameters)
 {
@@ -72,9 +75,9 @@ void SoftUartTask(void *parameters)
                     (SOFTUART_CONFIG_WLEN_8 | SOFTUART_CONFIG_PAR_NONE |
                      SOFTUART_CONFIG_STOP_ONE));
   //
-  // Compute the bit time for 38,400 baud.
+  // Compute the bit time for the chosen baud rate
   //
-  g_ulBitTime = (g_ui32SysClock / 38400) - 1;
+  g_ulBitTime = (g_ui32SysClock / TARGET_BAUD_RATE ) - 1;
   //
   // Configure the timers used to generate the timing for the software
   // UART.  The interface in this example is run at 38,400 baud,
@@ -102,6 +105,7 @@ void SoftUartTask(void *parameters)
   //ROM_IntEnable(INT_GPIOE);
   ROM_IntEnable(INT_TIMER0A);
   //ROM_IntEnable(INT_TIMER0B);
+
   //
   // Enable the transmit FIFO half full interrupt in the software UART.
   //
@@ -109,14 +113,23 @@ void SoftUartTask(void *parameters)
 
   uint8_t vals[] = {0x9c,0x2c,0x2b,0x3e};
 
+
   // Loop forever
   for (;;) {
+    // Enable the interrupts during transmission
+    ROM_IntEnable(INT_TIMER0A);
 
     // send data buffer
     for (int i = 0; i < 4; ++i ) {
       SoftUARTCharPut(&g_sUART, vals[i]);
     }
+    vTaskDelay(pdMS_TO_TICKS(10));
 
+    // disable the interrupt after the transmission has completed
+    while (g_sUART.ui16TxBufferRead != g_sUART.ui16TxBufferWrite)
+      vTaskDelay(pdMS_TO_TICKS(10));
+
+    ROM_IntDisable(INT_TIMER0A);
 
     // wait here for the x msec, where x is 2nd argument below.
     vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 5000 ) );
