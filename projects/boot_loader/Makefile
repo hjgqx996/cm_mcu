@@ -11,7 +11,7 @@ PART=TM4C1290NCPDT
 
 # # The base directory for TivaWare.
 #
-ROOT=..
+ROOT=../..
 
 
 #
@@ -28,7 +28,7 @@ IPATH+=${ROOT}
 
 ## where to find sources
 VPATH=.
-VPATH+=../common
+VPATH+=../../common
 
 # GIT 
 GIT_VERSION="$(shell git describe --abbrev=4 --dirty --always --tags)"
