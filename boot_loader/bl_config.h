@@ -1327,7 +1327,7 @@
 // void MyHwInitFunc(void);
 //
 //*****************************************************************************
-//#define BL_HW_INIT_FN_HOOK      bl_user_init_fn
+#define BL_HW_INIT_FN_HOOK      bl_user_init_hw_fn
 
 //*****************************************************************************
 //
@@ -1443,7 +1443,7 @@
 // control and wait for a new firmware image to be downloaded.
 //
 //*****************************************************************************
-//#define BL_CHECK_UPDATE_FN_HOOK bl_user_checkupdate_hook
+#define BL_CHECK_UPDATE_FN_HOOK bl_user_checkupdate_hook
 
 //*****************************************************************************
 //

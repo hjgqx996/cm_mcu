@@ -21,6 +21,9 @@
 #include "boot_loader/bl_config.h"
 #include "boot_loader/bl_uart.h"
 
+#include "common/microrl.h"
+#include "boot_loader/rl_config.h"
+
 
 #include "common/uart.h"
 
@@ -34,25 +37,10 @@ extern void Delay(uint32_t ui32Count);
 
 void ConfigureDevice(void);
 
+#ifdef BL_HW_INIT_FN_HOOK
 void
-bl_user_init_fn(void)
+bl_user_init_hw_fn(void)
 {
-  // ZYNQ UART for monitoring
-  // Turn on the UART peripheral
-  ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);
-
-
-  //
-  // Configure the UART for 115,200, 8-N-1 operation.
-  //
-  ROM_UARTConfigSetExpClk(UART1_BASE, CRYSTAL_FREQ, 115200,
-                          (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
-                              UART_CONFIG_PAR_NONE));
-
-  ConfigureDevice();
-
-  UARTPrint(UART4_BASE, "Bootloader starting\r\n");
-  UARTPrint(UART4_BASE, FIRMWARE_VERSION "\r\n");
 
   // LEDs
   //
@@ -79,8 +67,12 @@ bl_user_init_fn(void)
 
   return;
 }
+#endif // BL_INIT_FN_HOOK
+
+#ifdef BL_END_FN_HOOK
 #define LONG_DELAY 2500000
 
+// Flash green LED 3 times
 void bl_user_end_hook()
 {
   MAP_GPIOPinWrite(GPIO_PORTJ_BASE, GPIO_PIN_1, 1);
@@ -89,8 +81,12 @@ void bl_user_end_hook()
   Delay(LONG_DELAY);
   MAP_GPIOPinWrite(GPIO_PORTJ_BASE, GPIO_PIN_1, 1);
   Delay(LONG_DELAY);
+  MAP_GPIOPinWrite(GPIO_PORTJ_BASE, GPIO_PIN_1, 0);
   return;
 }
+#endif // BL_END_FN_HOOK
+
+#ifdef BL_PROGRESS_FN_HOOK
 
 void bl_user_progress_hook(unsigned long ulCompleted, unsigned long ulTotal)
 {
@@ -98,7 +94,10 @@ void bl_user_progress_hook(unsigned long ulCompleted, unsigned long ulTotal)
   MAP_GPIOPinWrite(GPIO_PORTJ_BASE, GPIO_PIN_0, tens%2);
   return;
 }
+#endif // BL_PROGRESS_FN_HOOK
 
+
+#ifdef BL_FLASH_ERROR_FN_HOOK
 void bl_user_flash_error()
 {
 //  MAP_GPIOPinWrite(GPIO_PORTP_BASE, GPIO_PIN_0, 1);
@@ -106,6 +105,8 @@ void bl_user_flash_error()
 
   return;
 }
+#endif // BL_FLASH_ERROR_FN_HOOK
+
 #if 0
 // UART receive with timeout
 static
@@ -137,19 +138,80 @@ bl_user_UARTReceive_timeout(uint8_t *pui8Data, uint32_t ui32Size, uint32_t timeo
   return ui32Size;
 }
 #endif
+
+#ifdef BL_CHECK_UPDATE_FN_HOOK
+// User hook to force an update
+void bl_user_uart_print(const char* str)
+{
+  UARTPrint(UARTx_BASE, str);
+  return ;
+}
+
+struct bl_user_data_t {
+  bool done;
+  int retval;
+};
+
+static const char * helpstr =
+    "h\r\n\tThis help.\r\n"
+    "b\r\n\tStart normal boot process\r\n"
+    "r\r\n\tRestart MCU\r\n"
+    "u\r\n\tForce update\r\n"
+    ;
+
+int bl_user_rl_execute(void *d, int argc, char **argv)
+{
+  struct bl_user_data_t *data = d;
+
+  if ( argc > 1 )  {
+    UARTPrint(UARTx_BASE, helpstr);
+    data->done = false;
+    return 0;
+  }
+
+  switch (argv[0][0]) {
+  case 'b':
+    UARTPrint(UARTx_BASE, "Booting\r\n");
+    data->done = true;
+    data->retval = 0;
+    break;
+  case 'u':
+    UARTPrint(UARTx_BASE, "Force update\r\n");
+    data->done = true;
+    data->retval = 1;
+    break;
+  case 'r':
+    UARTPrint(UARTx_BASE, "Hard reboot\r\n");
+    ROM_SysCtlReset(); // this function never returns
+    break;
+  case 'h':
+  default:
+    UARTPrint(UARTx_BASE, helpstr);
+    data->done = false;
+    break;
+  }
+
+
+  // this return value is AFAIK ignored
+  return 0;
+}
+
+
 // check the UART, if I receive the special command within
 // some period of time I force an update
 // return non-zero to force an update
-#define BUFFER_SZ  4
+#define BL_USER_BUFFSZ  1
 unsigned long bl_user_checkupdate_hook(void)
 {
   ConfigureDevice();
-  //
-  UARTPrint(UART4_BASE, __func__);
 
-  int timeout = 100000;
-  uint32_t ui32Size = BUFFER_SIZE;
-  uint8_t ui8Data[BUFFER_SZ];
+  UARTPrint(UARTx_BASE, "CM MCU BOOTLOADER\r\n");
+  UARTPrint(UARTx_BASE, FIRMWARE_VERSION "\r\n");
+
+
+  int timeout = 1000000;
+  uint32_t ui32Size = BL_USER_BUFFSZ;
+  uint8_t ui8Data;
   uint8_t recvd = 0;
   //
   // Send out the number of bytes requested.
@@ -164,22 +226,44 @@ unsigned long bl_user_checkupdate_hook(void)
       if ( timeout-- <=0 )
         break;
     }
-    if ( timeout <=0)
+    if ( timeout <=0) // why is this here?
       break;
 
     //
     // Receive a byte from the UART.
     //
-    ui8Data[recvd++] = HWREG(UARTx_BASE + UART_O_DR);
+    ui8Data = HWREG(UARTx_BASE + UART_O_DR); recvd++;
   }
+  UARTPrint(UARTx_BASE, "after timeout\r\n");
   if ( ! recvd )
     return 0; // got nothing on the UART
-  // look for the special signal
-  if ( ui8Data[0] == 'A'  &&
-      ui8Data[1] == '5'  &&
-      ui8Data[2] == 'A'  &&
-      ui8Data[3] == '5'
-      )
-    return 1;
+  // if we received something, start the CLI
+  struct bl_user_data_t rl_userdata = {
+      .done = false,
+      .retval = 0,
+  };
+  struct microrl_config rl_config = {
+      .print = bl_user_uart_print, // default to front panel
+      // set callback for execute
+      .execute = bl_user_rl_execute,
+      .prompt_str = MICRORL_PROMPT_DEFAULT,
+      .prompt_length = MICRORL_PROMPT_LEN,
+      .userdata = &rl_userdata,
+  };
+  microrl_t rl;
+  microrl_init(&rl, &rl_config);
+  microrl_set_execute_callback(&rl, bl_user_rl_execute);
+  microrl_insert_char(&rl, ' '); // this seems to be necessary?
+  microrl_insert_char(&rl, ui8Data);
+
+  for (;;) {
+    UARTReceive(&ui8Data, BL_USER_BUFFSZ);
+    microrl_insert_char(&rl, ui8Data);
+    if ( rl_userdata.done == true ) {
+      return rl_userdata.retval;
+    }
+  }
+
   return 0;
 }
+#endif // BL_CHECK_UPDATE_FN_HOOK

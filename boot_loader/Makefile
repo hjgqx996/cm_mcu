@@ -36,7 +36,7 @@ GIT_VERSION="$(shell git describe --abbrev=4 --dirty --always --tags)"
 CFLAGS+= -DFIRMWARE_VERSION=\"$(GIT_VERSION)\"
 CFLAGS+=-DTARGET_IS_TM4C129_RA2
 #ugh
-CFLAGS:=$(filter-out -DDEBUG,$(CFLAGS))
+#CFLAGS:=$(filter-out -DDEBUG,$(CFLAGS))
 
 #
 # The default rule, which causes the project to be built.
@@ -64,10 +64,11 @@ ${COMPILER}/bl_main.axf: ${COMPILER}/bl_main.o
 ${COMPILER}/bl_main.axf: ${COMPILER}/bl_uart.o
 ${COMPILER}/bl_main.axf: ${COMPILER}/bl_check.o
 ${COMPILER}/bl_main.axf: ${COMPILER}/bl_packet.o
-${COMPILER}/bl_main.axf: ${COMPILER}/bl_autobaud.o
 ${COMPILER}/bl_main.axf: ${COMPILER}/bl_flash.o
 ${COMPILER}/bl_main.axf: ${COMPILER}/bl_userhooks.o
 ${COMPILER}/bl_main.axf: ${COMPILER}/uart.o
+${COMPILER}/bl_main.axf: ${COMPILER}/microrl.o
+${COMPILER}/bl_main.axf: ${COMPILER}/printf-stdarg.o
 ${COMPILER}/bl_main.axf: ${COMPILER}/bl_startup_${COMPILER}.o
 # TIVAWARE
 #${COMPILER}/bl_main.axf: ${ROOT}/driverlib/${COMPILER}/libdriver.a

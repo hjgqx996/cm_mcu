@@ -402,8 +402,8 @@ AckPacket();
 void
 Updater(void)
 {
-  UARTPrint(UART4_BASE, "-------------------\r\nCM MCU BOOT LOADER\r\n--------------------\r\n");
-  UARTPrint(UART4_BASE, "build version " FIRMWARE_VERSION "\r\n");
+  UARTPrint(UARTx_BASE, "-------------------\r\nCM MCU Updater\r\n--------------------\r\n");
+  UARTPrint(UARTx_BASE, "build version " FIRMWARE_VERSION "\r\n");
 
 
   uint32_t ui32Size, ui32Temp, ui32FlashSize;
