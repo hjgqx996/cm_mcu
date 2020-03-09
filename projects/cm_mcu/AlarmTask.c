@@ -142,8 +142,8 @@ void AlarmTask(void *parameters)
     	temp_over_max=temp_over_ff;
     	worst_temp=imax_ff_temp;}
 
-    if ( status && current_temp_state != TEMP_BAD ) {
-    	// If temp goes from good to bad, turn on alarm, send error message to buffer
+    if ( status && (current_temp_state != TEMP_BAD )) {
+    	// If temp goes is bad, turn on alarm, send error message to buffer
       errbuf_data=(0x0FFFFFFFU)&(uint8_t)worst_temp;
       if ((errbuf_data!=errbuf_olddata)||(status!=oldstatus)){
     	  // only send message when status or temp have changed, to avoid filling up buffer
@@ -154,7 +154,7 @@ void AlarmTask(void *parameters)
       xQueueSendToFront(xPwrQueue, &message, pdMS_TO_TICKS(100));
       current_temp_state = TEMP_BAD;
     }
-    else if ( !status && current_temp_state == TEMP_BAD ) {
+    else if ( (!status) && (current_temp_state == TEMP_BAD )) {
     	// If temp goes from bad to good, turn off alarm, send message to buffer
       errbuf_data=(0x0FFFFFFFU&(uint8_t)worst_temp);
       errbuffer_put(ebuf, EBUF_TEMP_NORMAL, errbuf_data);

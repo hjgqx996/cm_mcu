@@ -965,18 +965,18 @@ static BaseType_t errbuff_out(int argc, char **argv)
     	uint8_t status = errcode&((1<<(ERRCODE_OFFSET-1))-1);
     	copied += snprintf(m+copied, s-copied,
     			"%02u %02u:%02u \t %x TEMP %03u %01x\r\n", days, hours,
-    			minutes, counter, errdata, status);
+    			minutes, realcount, errdata, status);
     }
     else{
 		switch(errcode) {
 		case EBUF_RESTART:
 			copied += snprintf(m+copied, s-copied,
-				"%02u %02u:%02u \t %x RESTART\r\n", days, hours, minutes, counter);
+				"%02u %02u:%02u \t %x RESTART\r\n", days, hours, minutes, realcount);
 			break;
 		case EBUF_RESET_BUFFER:
 			copied += snprintf(m+copied, s-copied,
 				"%02u %02u:%02u \t %x RESET BUFFER\r\n", days,
-				hours, minutes,counter);
+				hours, minutes,realcount);
 			break;
 		default:
 			copied += snprintf(m+copied, s-copied,
