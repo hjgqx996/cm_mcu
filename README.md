@@ -1,4 +1,4 @@
-# cm_mcu
+# cm_mcu ![Travis build status](https://travis-ci.org/apollo-lhc/cm_mcu.svg?branch=master)
 Microcontroller source code, initially targeting the [TI Tiva TM4C1290NCPDT](https://www.ti.com/product/TM4C1290NCPDT) on the Apollo command module. This is a Cortex-M4F 32 bit processor.
 
 ## Project
