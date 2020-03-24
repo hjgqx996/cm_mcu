@@ -126,6 +126,10 @@ uint64_t EPRMMessage(uint64_t action,uint64_t addr,uint64_t data);
 void EEPROMTask(void *parameters);
 
 // Soft UART Task
+// SoftUart queue messages
+#define SOFTUART_ENABLE_TRANSMIT 0x1
+#define SOFTUART_DISABLE_TRANSMIT 0x2
+extern QueueHandle_t xSoftUartQueue;
 void SoftUartTask(void *parameters);
 
 #endif /* PROJECTS_CM_MCU_TASKS_H_ */

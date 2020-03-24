@@ -20,6 +20,33 @@
 
 #include "Tasks.h"
 
+
+// Data Format
+// https://github.com/apollo-lhc/SM_ZYNQ_FW/blob/develop/src/CM_interface/CM_Monitoring_data_format.txt
+
+#define SENSOR_MESSAGE_START_OF_FRAME_NIB 2
+#define SENSOR_MESSAGE_DATA_FRAME_NIB     0
+#define SENSOR_MESSAGE_HEADER_OFFSET 6
+#define SENSOR_SIX_BITS 0x3F
+#define SENSOR_MESSAGE_START_OF_FRAME (SENSOR_MESSAGE_START_OF_FRAME_NIB << SENSOR_MESSAGE_HEADER_OFFSET)
+#define SENSOR_MESSAGE_DATA_FRAME (SENSOR_MESSAGE_DATA_FRAME_NIB << SENSOR_MESSAGE_HEADER_OFFSET)
+
+static
+void format_data(const uint8_t sensor, const uint16_t data, uint8_t message[4])
+{
+  // header and start of sensor (6 bits, sensor[7:2]
+  message[0] = SENSOR_MESSAGE_START_OF_FRAME  | (( sensor >> 2 ) & SENSOR_SIX_BITS) ;
+  // data frame 1, rest of sensor[1:0] (2 bits) and start of data[15:12] (4 bits)
+  message[1]  = SENSOR_MESSAGE_DATA_FRAME ;
+  message[1] |= ((sensor & 0x3 )<< 4) | ((data>>12)&0xF);
+  // data frame 2, data[11:6] (6 bits)
+  message[2]  = SENSOR_MESSAGE_DATA_FRAME;
+  message[2] |= (data >> 6) & 0x3F;
+  // // data frame 3, data[5:0] ( 6 bits )
+  message[3]  = SENSOR_MESSAGE_DATA_FRAME;
+  message[3] |= data & 0x3F;
+}
+
 //
 // The buffer used to hold the transmit data.
 //
@@ -39,6 +66,8 @@ unsigned long g_ulBitTime;
 tSoftUART g_sUART;
 
 extern uint32_t g_ui32SysClock;
+
+QueueHandle_t xSoftUartQueue;
 
 void SoftUartTask(void *parameters)
 {
@@ -110,26 +139,47 @@ void SoftUartTask(void *parameters)
   //
   SoftUARTIntEnable(&g_sUART, SOFTUART_INT_TX);
 
-  uint8_t vals[] = {0x9c,0x2c,0x2b,0x3e};
+  uint8_t message[4] = {0x9c,0x2c,0x2b,0x3e};
 
+  bool enable = false;
 
   // Loop forever
   for (;;) {
-    // Enable the interrupts during transmission
-    ROM_IntEnable(INT_TIMER0A);
-
-    // send data buffer
-    for (int i = 0; i < 4; ++i ) {
-      SoftUARTCharPut(&g_sUART, vals[i]);
+    uint32_t qmessage;
+    // check for a new item in the queue but don't wait
+    if ( xQueueReceive(xSoftUartQueue, &qmessage, 0) ) {
+      switch (qmessage ) {
+      case SOFTUART_ENABLE_TRANSMIT:
+        enable = true;
+        break;
+      case SOFTUART_DISABLE_TRANSMIT:
+        enable = false;
+        break;
+      }
     }
-    vTaskDelay(pdMS_TO_TICKS(10));
+    if ( enable ) {
+      // Enable the interrupts during transmission
+      ROM_IntEnable(INT_TIMER0A);
 
-    // disable the interrupt after the transmission has completed
-    while (g_sUART.ui16TxBufferRead != g_sUART.ui16TxBufferWrite)
+      // Fireflies
+      for ( int j = 0; j < NFIREFLIES; ++j) {
+        int16_t temperature = getFFvalue(j);
+        format_data(j, temperature, message);
+        // send data buffer
+        for (int i = 0; i < 4; ++i ) {
+          SoftUARTCharPut(&g_sUART, message[i]);
+        }
+      }
+
+      // wait for the transmission to finish
       vTaskDelay(pdMS_TO_TICKS(10));
 
-    ROM_IntDisable(INT_TIMER0A);
+      // disable the interrupt after the transmission has completed
+      while (g_sUART.ui16TxBufferRead != g_sUART.ui16TxBufferWrite)
+        vTaskDelay(pdMS_TO_TICKS(10));
 
+      ROM_IntDisable(INT_TIMER0A);
+    }
     // wait here for the x msec, where x is 2nd argument below.
     vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 5000 ) );
   }
