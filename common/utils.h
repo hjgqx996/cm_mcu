@@ -53,6 +53,8 @@ uint64_t read_eeprom_multi(uint32_t addr);
 #define EBUF_TEMP_HIGH(status) ((1<<(ERRCODE_OFFSET-1))|status)
 #define EBUF_TEMP_NORMAL EBUF_TEMP_HIGH(0)
 
+#define EBUF_PWR_FAILURE(priority) ((01<<(ERRCODE_OFFSET-2))|priority)
+
 typedef struct error_buffer_t error_buffer_t;
 typedef error_buffer_t* errbuf_handle_t;
 

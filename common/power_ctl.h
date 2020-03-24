@@ -22,7 +22,7 @@
 #define TEMP_ALARM (7)
 #define TEMP_ALARM_CLEAR (8)
 #define CURRENT_ALARM (9)
-#define CURRENT_ALAMR_CLEAR (10)
+#define CURRENT_ALARM_CLEAR (10)
 
 // alarms
 

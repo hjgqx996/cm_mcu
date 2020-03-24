@@ -76,6 +76,11 @@ static enum ps_state states[N_PS_OKS] = { PWR_UNKNOWN };
 // this variable holds the current lowest enabled power supply
 static int lowest_enabled_ps_prio = 0;
 
+//static uint8_t ps_ok_array[] = {
+//		read_gpio_pin(oks[0].name), // I feel like this won't work how I want it to
+//		read_gpio_pin(oks[1].name) ...
+//};
+
 int getLowestEnabledPSPriority()
 {
   return lowest_enabled_ps_prio;
