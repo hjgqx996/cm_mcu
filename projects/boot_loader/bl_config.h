@@ -25,6 +25,8 @@
 #ifndef __BL_CONFIG_H__
 #define __BL_CONFIG_H__
 
+#define APOLLO_BL_UART_FP // if you want front panel, otherwise zynq
+
 //*****************************************************************************
 //
 // The following defines are used to configure the operation of the boot
@@ -359,8 +361,11 @@
 // Requires: UARTx_BASE
 //
 //*****************************************************************************
+#ifdef APOLLO_BL_UART_FP
+#define UART_CLOCK_ENABLE         SYSCTL_RCGCUART_R4
+#else
 #define UART_CLOCK_ENABLE         SYSCTL_RCGCUART_R1
-
+#endif
 //*****************************************************************************
 //
 // Selects the base address of the UART peripheral module
@@ -370,8 +375,11 @@
 // Requires: UART_CLOCK_ENABLE
 //
 //*****************************************************************************
+#ifdef APOLLO_BL_UART_FP
+#define UARTx_BASE                UART4_BASE
+#else
 #define UARTx_BASE                UART1_BASE
-
+#endif
 //*****************************************************************************
 //
 // Selects the clock enable for the GPIO corresponding to UART RX pin
@@ -381,8 +389,11 @@
 // Requires: UART_RXPIN_BASE, UART_RXPIN_PCTL and UART_RXPIN_POS
 //
 //*****************************************************************************
+#ifdef APOLLO_BL_UART_FP
+#define UART_RXPIN_CLOCK_ENABLE   SYSCTL_RCGCGPIO_R4
+#else
 #define UART_RXPIN_CLOCK_ENABLE   SYSCTL_RCGCGPIO_R0
-
+#endif
 //*****************************************************************************
 //
 // Selects the base address for the GPIO corresponding to UART RX pin
@@ -414,7 +425,11 @@
 // Requires: UART_RXPIN_CLOCK_ENABLE, UART_RXPIN_BASE and UART_RXPIN_PCTL
 //
 //*****************************************************************************
+#ifdef APOLLO_BL_UART_FP
+#define UART_RXPIN_POS          2
+#else
 #define UART_RXPIN_POS          0
+#endif
 
 //*****************************************************************************
 //
@@ -425,7 +440,11 @@
 // Requires: UART_TXPIN_BASE, UART_TXPIN_PCTL and UART_TXPIN_POS
 //
 //*****************************************************************************
+#ifdef APOLLO_BL_UART_FP
+#define UART_TXPIN_CLOCK_ENABLE SYSCTL_RCGCGPIO_R4
+#else
 #define UART_TXPIN_CLOCK_ENABLE SYSCTL_RCGCGPIO_R0
+#endif
 
 //*****************************************************************************
 //
@@ -458,7 +477,11 @@
 // Requires: UART_TXPIN_CLOCK_ENABLE, UART_TXPIN_BASE and UART_TXPIN_PCTL
 //
 //*****************************************************************************
+#ifdef APOLLO_BL_UART_FP
+#define UART_TXPIN_POS          3
+#else
 #define UART_TXPIN_POS          1
+#endif
 
 //*****************************************************************************
 //
