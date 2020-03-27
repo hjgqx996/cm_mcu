@@ -156,7 +156,7 @@ static const char * helpstr =
     "h\r\n\tThis help.\r\n"
     "b\r\n\tStart normal boot process\r\n"
     "r\r\n\tRestart MCU\r\n"
-    "u\r\n\tForce update\r\n"
+    "f\r\n\tForce update\r\n"
     ;
 
 int bl_user_rl_execute(void *d, int argc, char **argv)
@@ -171,11 +171,11 @@ int bl_user_rl_execute(void *d, int argc, char **argv)
 
   switch (argv[0][0]) {
   case 'b':
-    UARTPrint(UARTx_BASE, "Booting\r\n");
+    UARTPrint(UARTx_BASE, "Booting application.\r\n");
     data->done = true;
     data->retval = 0;
     break;
-  case 'u':
+  case 'f':
     UARTPrint(UARTx_BASE, "Force update\r\n");
     data->done = true;
     data->retval = 1;
@@ -190,15 +190,14 @@ int bl_user_rl_execute(void *d, int argc, char **argv)
     data->done = false;
     break;
   }
-
+  while (ROM_UARTBusy(UARTx_BASE))
+    ;
 
   // this return value is AFAIK ignored
   return 0;
 }
 
 
-// check the UART, if I receive the special command within
-// some period of time I force an update
 // return non-zero to force an update
 #define BL_USER_BUFFSZ  1
 unsigned long bl_user_checkupdate_hook(void)
@@ -207,37 +206,10 @@ unsigned long bl_user_checkupdate_hook(void)
 
   UARTPrint(UARTx_BASE, "CM MCU BOOTLOADER\r\n");
   UARTPrint(UARTx_BASE, FIRMWARE_VERSION "\r\n");
+  while (ROM_UARTBusy(UARTx_BASE))
+    ;
 
 
-  int timeout = 1000000;
-  uint32_t ui32Size = BL_USER_BUFFSZ;
-  uint8_t ui8Data;
-  uint8_t recvd = 0;
-  //
-  // Send out the number of bytes requested.
-  //
-  while(ui32Size--)
-  {
-    //
-    // Wait for the FIFO to not be empty.
-    //
-    while ((HWREG(UARTx_BASE + UART_O_FR) & UART_FR_RXFE))
-    {
-      if ( timeout-- <=0 )
-        break;
-    }
-    if ( timeout <=0) // why is this here?
-      break;
-
-    //
-    // Receive a byte from the UART.
-    //
-    ui8Data = HWREG(UARTx_BASE + UART_O_DR); recvd++;
-  }
-  UARTPrint(UARTx_BASE, "after timeout\r\n");
-  if ( ! recvd )
-    return 0; // got nothing on the UART
-  // if we received something, start the CLI
   struct bl_user_data_t rl_userdata = {
       .done = false,
       .retval = 0,
@@ -254,14 +226,33 @@ unsigned long bl_user_checkupdate_hook(void)
   microrl_init(&rl, &rl_config);
   microrl_set_execute_callback(&rl, bl_user_rl_execute);
   microrl_insert_char(&rl, ' '); // this seems to be necessary?
-  microrl_insert_char(&rl, ui8Data);
 
-  for (;;) {
-    UARTReceive(&ui8Data, BL_USER_BUFFSZ);
-    microrl_insert_char(&rl, ui8Data);
+
+  int cRxedChar;
+  for( ;; ) {
+    int timeleft = 20;
+    cRxedChar = -1;
+
+    while ( timeleft ) {
+      if ( ROM_UARTCharsAvail(UARTx_BASE)) {
+        cRxedChar = ROM_UARTCharGetNonBlocking(UARTx_BASE);
+        break;
+      }
+      else {
+        ROM_SysCtlDelay(CRYSTAL_FREQ/20);
+      }
+      timeleft--;
+    }
+    if ( cRxedChar > 0 )
+      microrl_insert_char(&rl, cRxedChar);
+    if ( timeleft == 0 ) {
+      UARTPrint(UARTx_BASE, "CLI timed out\r\n");
+      break;
+    }
     if ( rl_userdata.done == true ) {
       return rl_userdata.retval;
     }
+
   }
 
   return 0;
